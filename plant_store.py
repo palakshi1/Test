@@ -1,0 +1,2187 @@
+"""
+GreenGrove - Premium Plant E-Commerce Store
+A fully functional Streamlit plant e-commerce application with AI chatbot integration.
+"""
+
+import streamlit as st
+import json
+import random
+from datetime import datetime
+
+# ─────────────────────────────────────────────
+# PAGE CONFIG
+# ─────────────────────────────────────────────
+st.set_page_config(
+    page_title="GreenGrove | Premium Plants & Garden Care",
+    page_icon="🌿",
+    layout="wide",
+    initial_sidebar_state="collapsed",
+)
+
+# ─────────────────────────────────────────────
+# PRODUCT DATABASE
+# ─────────────────────────────────────────────
+PRODUCTS = [
+    # Indoor Plants
+    {
+        "id": 1, "name": "Monstera Deliciosa", "category": "Indoor Plants",
+        "price": 899, "original_price": 1199, "rating": 4.8, "reviews": 324,
+        "care_level": "Easy", "sunlight": "Indirect", "air_purifying": True,
+        "image": "https://images.unsplash.com/photo-1614594975525-e45190c55d0b?w=400&h=400&fit=crop",
+        "description": "The iconic Swiss Cheese Plant with stunning split leaves. Perfect for living rooms and offices.",
+        "badge": "Bestseller", "stock": 45, "pot_size": "6 inch",
+    },
+    {
+        "id": 2, "name": "Snake Plant (Sansevieria)", "category": "Indoor Plants",
+        "price": 549, "original_price": 699, "rating": 4.9, "reviews": 512,
+        "care_level": "Very Easy", "sunlight": "Low to Bright", "air_purifying": True,
+        "image": "https://images.unsplash.com/photo-1593691509543-c55fb32e4c84?w=400&h=400&fit=crop",
+        "description": "NASA-certified air purifier. Thrives in neglect. Ideal for beginners and busy plant parents.",
+        "badge": "Top Rated", "stock": 78, "pot_size": "5 inch",
+    },
+    {
+        "id": 3, "name": "Peace Lily", "category": "Indoor Plants",
+        "price": 449, "original_price": 599, "rating": 4.7, "reviews": 289,
+        "care_level": "Easy", "sunlight": "Low Light", "air_purifying": True,
+        "image": "https://images.unsplash.com/photo-1616694615957-b5d7d89f3e9e?w=400&h=400&fit=crop",
+        "description": "Elegant white blooms and deep green foliage. A symbol of peace and tranquility.",
+        "badge": "Sale", "stock": 32, "pot_size": "5 inch",
+    },
+    {
+        "id": 4, "name": "Fiddle Leaf Fig", "category": "Indoor Plants",
+        "price": 1299, "original_price": 1599, "rating": 4.6, "reviews": 198,
+        "care_level": "Moderate", "sunlight": "Bright Indirect", "air_purifying": False,
+        "image": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=400&h=400&fit=crop",
+        "description": "The designer's favourite. Large, architectural leaves make a bold statement in any space.",
+        "badge": "Premium", "stock": 18, "pot_size": "8 inch",
+    },
+    {
+        "id": 5, "name": "Pothos Golden", "category": "Indoor Plants",
+        "price": 299, "original_price": 399, "rating": 4.8, "reviews": 621,
+        "care_level": "Very Easy", "sunlight": "Low to Medium", "air_purifying": True,
+        "image": "https://images.unsplash.com/photo-1600411833196-7c1f6b1a8b90?w=400&h=400&fit=crop",
+        "description": "Trailing golden-green vines perfect for shelves and hanging baskets.",
+        "badge": "Bestseller", "stock": 95, "pot_size": "4 inch",
+    },
+    # Outdoor Plants
+    {
+        "id": 6, "name": "Bougainvillea", "category": "Outdoor Plants",
+        "price": 649, "original_price": 849, "rating": 4.7, "reviews": 234,
+        "care_level": "Easy", "sunlight": "Full Sun", "air_purifying": False,
+        "image": "https://images.unsplash.com/photo-1587978185023-dc9c1d66fbca?w=400&h=400&fit=crop",
+        "description": "Spectacular magenta blooms cascade over walls and pergolas. A garden showstopper.",
+        "badge": "Sale", "stock": 40, "pot_size": "8 inch",
+    },
+    {
+        "id": 7, "name": "Hibiscus Red", "category": "Outdoor Plants",
+        "price": 499, "original_price": 649, "rating": 4.6, "reviews": 178,
+        "care_level": "Moderate", "sunlight": "Full Sun", "air_purifying": False,
+        "image": "https://images.unsplash.com/photo-1597848212624-a19eb35e2651?w=400&h=400&fit=crop",
+        "description": "Vibrant crimson flowers attract butterflies. Blooms prolifically in warm climates.",
+        "badge": None, "stock": 55, "pot_size": "7 inch",
+    },
+    # Succulents
+    {
+        "id": 8, "name": "Echeveria Collection (3 Pack)", "category": "Succulents",
+        "price": 599, "original_price": 799, "rating": 4.9, "reviews": 445,
+        "care_level": "Very Easy", "sunlight": "Bright Indirect", "air_purifying": False,
+        "image": "https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=400&h=400&fit=crop",
+        "description": "A curated trio of rosette succulents in pastel hues. Perfect gift and desk decor.",
+        "badge": "Bundle Deal", "stock": 62, "pot_size": "3 inch each",
+    },
+    {
+        "id": 9, "name": "Aloe Vera", "category": "Succulents",
+        "price": 349, "original_price": 449, "rating": 4.8, "reviews": 389,
+        "care_level": "Very Easy", "sunlight": "Bright Indirect", "air_purifying": True,
+        "image": "https://images.unsplash.com/photo-1596547609652-9cf5d8c10616?w=400&h=400&fit=crop",
+        "description": "Nature's first aid plant. Medicinal gel soothes burns and skin irritation.",
+        "badge": "Bestseller", "stock": 80, "pot_size": "5 inch",
+    },
+    # Bonsai
+    {
+        "id": 10, "name": "Ficus Bonsai (5 Year)", "category": "Bonsai Plants",
+        "price": 2499, "original_price": 2999, "rating": 4.9, "reviews": 87,
+        "care_level": "Expert", "sunlight": "Bright Indirect", "air_purifying": False,
+        "image": "https://images.unsplash.com/photo-1599598425947-5202edd56fdb?w=400&h=400&fit=crop",
+        "description": "A meticulously trained 5-year-old Ficus bonsai. A living sculpture for connoisseurs.",
+        "badge": "Exclusive", "stock": 12, "pot_size": "Specialty",
+    },
+    # Fertilizers
+    {
+        "id": 11, "name": "Organic Neem Cake Fertilizer", "category": "Fertilizers",
+        "price": 299, "original_price": 399, "rating": 4.7, "reviews": 256,
+        "care_level": None, "sunlight": None, "air_purifying": False,
+        "image": "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&h=400&fit=crop",
+        "description": "100% organic neem cake. Controls pests and enriches soil microbiome naturally.",
+        "badge": "Organic", "stock": 120, "pot_size": "1 kg",
+    },
+    {
+        "id": 12, "name": "Liquid Seaweed Growth Booster", "category": "Fertilizers",
+        "price": 449, "original_price": 549, "rating": 4.8, "reviews": 198,
+        "care_level": None, "sunlight": None, "air_purifying": False,
+        "image": "https://images.unsplash.com/photo-1592150550953-e20a60cad3a4?w=400&h=400&fit=crop",
+        "description": "Cold-processed seaweed extract promotes robust root development and lush growth.",
+        "badge": "Sale", "stock": 85, "pot_size": "500 ml",
+    },
+    # Pots & Planters
+    {
+        "id": 13, "name": "Terracotta Pot Set (3 Sizes)", "category": "Pots & Planters",
+        "price": 799, "original_price": 999, "rating": 4.8, "reviews": 312,
+        "care_level": None, "sunlight": None, "air_purifying": False,
+        "image": "https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=400&h=400&fit=crop",
+        "description": "Hand-thrown terracotta in 4, 6, and 8 inch sizes. Breathable, classic, timeless.",
+        "badge": "Bundle Deal", "stock": 60, "pot_size": "Set of 3",
+    },
+    {
+        "id": 14, "name": "Minimalist White Ceramic Planter", "category": "Pots & Planters",
+        "price": 649, "original_price": 849, "rating": 4.7, "reviews": 189,
+        "care_level": None, "sunlight": None, "air_purifying": False,
+        "image": "https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=400&h=400&fit=crop",
+        "description": "Matte white finish with drainage hole. Elevates any plant to a design object.",
+        "badge": "Premium", "stock": 45, "pot_size": "6 inch",
+    },
+    # Seeds
+    {
+        "id": 15, "name": "Tomato Cherry Seeds (Heirloom)", "category": "Vegetable Seeds",
+        "price": 149, "original_price": 199, "rating": 4.6, "reviews": 445,
+        "care_level": None, "sunlight": None, "air_purifying": False,
+        "image": "https://images.unsplash.com/photo-1561136594-7f68413baa99?w=400&h=400&fit=crop",
+        "description": "Open-pollinated heirloom cherry tomatoes. High yield, exceptional flavour.",
+        "badge": "Organic", "stock": 200, "pot_size": "50 seeds",
+    },
+    {
+        "id": 16, "name": "Sunflower Giant Seeds", "category": "Flower Seeds",
+        "price": 129, "original_price": 169, "rating": 4.8, "reviews": 367,
+        "care_level": None, "sunlight": None, "air_purifying": False,
+        "image": "https://images.unsplash.com/photo-1597848212624-a19eb35e2651?w=400&h=400&fit=crop",
+        "description": "Grow 6-8 ft giants with massive golden heads. Kids and adults love these.",
+        "badge": "Bestseller", "stock": 180, "pot_size": "20 seeds",
+    },
+    # Flowering Plants
+    {
+        "id": 17, "name": "Anthurium Red", "category": "Flowering Plants",
+        "price": 699, "original_price": 899, "rating": 4.7, "reviews": 234,
+        "care_level": "Moderate", "sunlight": "Bright Indirect", "air_purifying": True,
+        "image": "https://images.unsplash.com/photo-1574684891174-df6b02ab38d7?w=400&h=400&fit=crop",
+        "description": "Waxy heart-shaped blooms in glossy red. Blooms year-round with proper care.",
+        "badge": "Sale", "stock": 38, "pot_size": "6 inch",
+    },
+    {
+        "id": 18, "name": "Orchid Phalaenopsis White", "category": "Flowering Plants",
+        "price": 1199, "original_price": 1499, "rating": 4.9, "reviews": 156,
+        "care_level": "Moderate", "sunlight": "Bright Indirect", "air_purifying": False,
+        "image": "https://images.unsplash.com/photo-1490750967868-88df5691cc9c?w=400&h=400&fit=crop",
+        "description": "Elegant white moth orchid. A timeless gifting choice for all occasions.",
+        "badge": "Premium", "stock": 25, "pot_size": "5 inch",
+    },
+    # Air Purifying
+    {
+        "id": 19, "name": "Spider Plant Variegated", "category": "Air Purifying Plants",
+        "price": 349, "original_price": 449, "rating": 4.8, "reviews": 478,
+        "care_level": "Very Easy", "sunlight": "Indirect", "air_purifying": True,
+        "image": "https://images.unsplash.com/photo-1596236100223-f3c656de3038?w=400&h=400&fit=crop",
+        "description": "Prolific producer of baby plantlets. One of NASA's top air-cleaning plants.",
+        "badge": "Top Rated", "stock": 90, "pot_size": "5 inch",
+    },
+    {
+        "id": 20, "name": "Boston Fern", "category": "Air Purifying Plants",
+        "price": 499, "original_price": 649, "rating": 4.6, "reviews": 245,
+        "care_level": "Moderate", "sunlight": "Indirect", "air_purifying": True,
+        "image": "https://images.unsplash.com/photo-1585500610523-4e56e4b5ec55?w=400&h=400&fit=crop",
+        "description": "Lush, arching fronds that humidify your air naturally. Perfect for bathrooms.",
+        "badge": "Sale", "stock": 42, "pot_size": "6 inch",
+    },
+]
+
+CATEGORIES = {
+    "Plants": ["Indoor Plants", "Outdoor Plants", "Air Purifying Plants", "Oxygen Rich Plants",
+               "Flowering Plants", "Succulents", "Bonsai Plants", "Gifting Plants"],
+    "Seeds": ["Fruit Seeds", "Vegetable Seeds", "Flower Seeds", "Microgreen Seeds", "Herb Seeds"],
+    "Plant Care": ["Fertilizers", "Pots & Planters", "Gardening Tools",
+                   "Watering Accessories", "Soil & Compost", "Pest Control", "Plant Medicines"],
+}
+
+TESTIMONIALS = [
+    {"name": "Priya Sharma", "city": "Mumbai", "rating": 5,
+     "text": "My Monstera arrived perfectly packed and has been thriving for 3 months. The care guide included was incredibly detailed. Will definitely order again.",
+     "avatar": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=60&h=60&fit=crop&crop=face"},
+    {"name": "Rohan Mehta", "city": "Bangalore", "rating": 5,
+     "text": "The Bonsai is absolutely stunning. Expert packaging, healthy roots, and the customer support team helped me with care tips post-purchase.",
+     "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=60&h=60&fit=crop&crop=face"},
+    {"name": "Ananya Reddy", "city": "Hyderabad", "rating": 4,
+     "text": "Fast delivery, beautiful plants. The soil quality is premium. My succulents are putting out new growth already. Packaging was eco-friendly too.",
+     "avatar": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=60&h=60&fit=crop&crop=face"},
+    {"name": "Vikram Singh", "city": "Delhi", "rating": 5,
+     "text": "Ordered 6 air-purifying plants for my office. Arrived the next day, all healthy. My workspace feels so much fresher. Exceptional service.",
+     "avatar": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=60&h=60&fit=crop&crop=face"},
+]
+
+# ─────────────────────────────────────────────
+# SESSION STATE INITIALIZATION
+# ─────────────────────────────────────────────
+def init_session_state():
+    if "cart" not in st.session_state:
+        st.session_state.cart = {}
+    if "wishlist" not in st.session_state:
+        st.session_state.wishlist = set()
+    if "page" not in st.session_state:
+        st.session_state.page = "home"
+    if "selected_category" not in st.session_state:
+        st.session_state.selected_category = None
+    if "selected_product" not in st.session_state:
+        st.session_state.selected_product = None
+    if "search_query" not in st.session_state:
+        st.session_state.search_query = ""
+    if "chatbot_open" not in st.session_state:
+        st.session_state.chatbot_open = False
+    if "chatbot_mode" not in st.session_state:
+        st.session_state.chatbot_mode = None
+    if "chatbot_messages" not in st.session_state:
+        st.session_state.chatbot_messages = []
+    if "diagnosis_result" not in st.session_state:
+        st.session_state.diagnosis_result = None
+    if "sort_by" not in st.session_state:
+        st.session_state.sort_by = "Popular"
+    if "filter_care" not in st.session_state:
+        st.session_state.filter_care = "All"
+    if "checkout_step" not in st.session_state:
+        st.session_state.checkout_step = 0
+    if "order_placed" not in st.session_state:
+        st.session_state.order_placed = False
+
+init_session_state()
+
+# ─────────────────────────────────────────────
+# HELPERS
+# ─────────────────────────────────────────────
+def add_to_cart(product_id, qty=1):
+    pid = str(product_id)
+    if pid in st.session_state.cart:
+        st.session_state.cart[pid]["qty"] += qty
+    else:
+        prod = next((p for p in PRODUCTS if p["id"] == product_id), None)
+        if prod:
+            st.session_state.cart[pid] = {"product": prod, "qty": qty}
+
+def get_cart_total():
+    return sum(v["product"]["price"] * v["qty"] for v in st.session_state.cart.values())
+
+def get_cart_count():
+    return sum(v["qty"] for v in st.session_state.cart.values())
+
+def star_display(rating):
+    full = int(rating)
+    return "★" * full + ("½" if rating - full >= 0.5 else "") + "☆" * (5 - full - (1 if rating - full >= 0.5 else 0))
+
+def discount_pct(price, original):
+    return int((1 - price / original) * 100)
+
+def nav_to(page, **kwargs):
+    st.session_state.page = page
+    for k, v in kwargs.items():
+        setattr(st.session_state, k, v)
+
+# ─────────────────────────────────────────────
+# GLOBAL CSS
+# ─────────────────────────────────────────────
+def inject_css():
+    st.markdown("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+    :root {
+        --green-dark: #1B5E20;
+        --green-primary: #2E7D32;
+        --green-mid: #43A047;
+        --green-light: #C8E6C9;
+        --green-pale: #F1F8E9;
+        --pink-accent: #E91E8C;
+        --pink-light: #FCE4EC;
+        --pink-pale: #FFF0F5;
+        --cream: #FAFAF7;
+        --charcoal: #1A1A1A;
+        --text-mid: #444444;
+        --text-light: #777777;
+        --border: #E8EDE8;
+        --shadow: 0 4px 20px rgba(0,0,0,0.08);
+        --shadow-hover: 0 12px 40px rgba(0,0,0,0.15);
+        --radius: 12px;
+        --radius-lg: 20px;
+    }
+
+    * { box-sizing: border-box; }
+
+    .stApp {
+        background: var(--cream) !important;
+        font-family: 'DM Sans', sans-serif !important;
+    }
+
+    /* Hide Streamlit default elements */
+    #MainMenu, footer, header { visibility: hidden !important; }
+    .stDeployButton { display: none !important; }
+    .block-container {
+        padding: 0 !important;
+        max-width: 100% !important;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--cream); }
+    ::-webkit-scrollbar-thumb { background: var(--green-light); border-radius: 3px; }
+
+    /* Typography */
+    h1, h2, h3 { font-family: 'Playfair Display', serif !important; color: var(--charcoal); }
+
+    /* ── TOP NAV ── */
+    .top-nav {
+        background: white;
+        border-bottom: 1px solid var(--border);
+        padding: 0 40px;
+        position: sticky;
+        top: 0;
+        z-index: 999;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    .nav-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 72px;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+    .logo-wrap { display: flex; align-items: center; gap: 10px; }
+    .logo-icon { width: 38px; height: 38px; background: var(--green-primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .logo-text { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: var(--green-dark); letter-spacing: -0.5px; }
+    .logo-sub { font-size: 10px; color: var(--text-light); letter-spacing: 2px; text-transform: uppercase; margin-top: -4px; }
+
+    /* ── HERO ── */
+    .hero-section {
+        background: linear-gradient(135deg, #1B5E20 0%, #2E7D32 50%, #388E3C 100%);
+        min-height: 520px;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+    }
+    .hero-content {
+        padding: 60px 60px;
+        max-width: 620px;
+        position: relative;
+        z-index: 2;
+    }
+    .hero-badge {
+        display: inline-block;
+        background: var(--pink-light);
+        color: var(--pink-accent);
+        padding: 6px 16px;
+        border-radius: 50px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        margin-bottom: 20px;
+    }
+    .hero-title {
+        font-family: 'Playfair Display', serif;
+        font-size: clamp(36px, 4vw, 58px);
+        font-weight: 700;
+        color: white;
+        line-height: 1.15;
+        margin-bottom: 20px;
+    }
+    .hero-sub {
+        color: rgba(255,255,255,0.82);
+        font-size: 17px;
+        line-height: 1.7;
+        margin-bottom: 36px;
+        font-weight: 300;
+    }
+    .hero-cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: white;
+        color: var(--green-dark);
+        padding: 16px 32px;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 15px;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.3s;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    }
+    .hero-cta:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(0,0,0,0.25); }
+    .hero-img-overlay {
+        position: absolute;
+        right: -40px;
+        top: -40px;
+        width: 55%;
+        height: calc(100% + 80px);
+        background-size: cover;
+        background-position: center;
+        opacity: 0.25;
+        border-radius: 0 0 0 60% / 0 0 0 40%;
+    }
+    .hero-stats {
+        display: flex;
+        gap: 40px;
+        margin-top: 48px;
+    }
+    .hero-stat { text-align: center; }
+    .hero-stat-num { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 700; color: white; }
+    .hero-stat-label { font-size: 12px; color: rgba(255,255,255,0.65); text-transform: uppercase; letter-spacing: 1px; }
+
+    /* ── SECTION ── */
+    .section-wrap {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 56px 40px;
+    }
+    .section-header {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        margin-bottom: 36px;
+    }
+    .section-tag {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--green-primary);
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        margin-bottom: 6px;
+    }
+    .section-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--charcoal);
+        margin: 0;
+    }
+    .view-all {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--green-primary);
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        border-bottom: 1px solid transparent;
+        transition: all 0.2s;
+        padding-bottom: 4px;
+    }
+    .view-all:hover { border-bottom-color: var(--green-primary); }
+
+    /* ── PRODUCT CARD ── */
+    .product-card {
+        background: white;
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        box-shadow: var(--shadow);
+        transition: all 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        position: relative;
+        cursor: pointer;
+    }
+    .product-card:hover {
+        transform: translateY(-6px);
+        box-shadow: var(--shadow-hover);
+    }
+    .product-card:hover .card-actions { opacity: 1; transform: translateY(0); }
+    .product-img-wrap {
+        position: relative;
+        padding-top: 75%;
+        overflow: hidden;
+        background: var(--green-pale);
+    }
+    .product-img-wrap img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.4s ease;
+    }
+    .product-card:hover .product-img-wrap img { transform: scale(1.06); }
+    .badge {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        padding: 4px 10px;
+        border-radius: 50px;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .badge-bestseller { background: #FFF3E0; color: #E65100; }
+    .badge-sale { background: #FCE4EC; color: #C62828; }
+    .badge-premium { background: #EDE7F6; color: #4527A0; }
+    .badge-organic { background: #E8F5E9; color: #2E7D32; }
+    .badge-top-rated { background: #FFF8E1; color: #F57F17; }
+    .badge-bundle { background: #E3F2FD; color: #1565C0; }
+    .badge-exclusive { background: #1A1A1A; color: white; }
+
+    .card-actions {
+        position: absolute;
+        bottom: 12px;
+        right: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        opacity: 0;
+        transform: translateY(8px);
+        transition: all 0.3s;
+    }
+    .wishlist-btn {
+        width: 36px; height: 36px;
+        background: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+        cursor: pointer;
+        font-size: 14px;
+        border: none;
+        transition: all 0.2s;
+    }
+    .wishlist-btn:hover { transform: scale(1.1); }
+
+    .card-body { padding: 16px 18px 20px; }
+    .card-category {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: var(--green-primary);
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+    .card-name {
+        font-family: 'Playfair Display', serif;
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--charcoal);
+        margin-bottom: 6px;
+        line-height: 1.3;
+    }
+    .card-rating { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+    .stars { color: #FFA000; font-size: 12px; }
+    .rating-count { font-size: 11px; color: var(--text-light); }
+    .care-chips { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 12px; }
+    .chip {
+        padding: 3px 8px;
+        border-radius: 50px;
+        font-size: 10px;
+        font-weight: 500;
+        background: var(--green-pale);
+        color: var(--green-dark);
+    }
+    .card-pricing { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+    .price-current {
+        font-family: 'Playfair Display', serif;
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--charcoal);
+    }
+    .price-original {
+        font-size: 13px;
+        color: var(--text-light);
+        text-decoration: line-through;
+    }
+    .price-discount {
+        font-size: 11px;
+        font-weight: 700;
+        color: #C62828;
+        background: #FCE4EC;
+        padding: 2px 7px;
+        border-radius: 50px;
+    }
+    .btn-add-cart {
+        width: 100%;
+        background: var(--green-primary);
+        color: white;
+        border: none;
+        padding: 11px 20px;
+        border-radius: 50px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.25s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        letter-spacing: 0.3px;
+    }
+    .btn-add-cart:hover { background: var(--green-dark); transform: scale(1.02); }
+
+    /* ── CATEGORY CARDS ── */
+    .cat-card {
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        position: relative;
+        cursor: pointer;
+        aspect-ratio: 4/5;
+        box-shadow: var(--shadow);
+        transition: all 0.3s;
+    }
+    .cat-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-hover); }
+    .cat-card img { width: 100%; height: 100%; object-fit: cover; }
+    .cat-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 60%);
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        padding: 20px;
+    }
+    .cat-name { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; color: white; }
+    .cat-count { font-size: 12px; color: rgba(255,255,255,0.75); margin-top: 2px; }
+
+    /* ── PROMO BANNER ── */
+    .promo-band {
+        background: linear-gradient(135deg, #FCE4EC, #F8BBD0);
+        border-radius: var(--radius-lg);
+        padding: 40px 48px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 0 40px;
+    }
+    .promo-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--charcoal);
+        margin-bottom: 8px;
+    }
+    .promo-sub { color: var(--text-mid); font-size: 15px; max-width: 400px; line-height: 1.6; }
+    .promo-code {
+        background: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        margin-top: 16px;
+        display: inline-block;
+        font-weight: 700;
+        font-size: 14px;
+        color: var(--green-dark);
+        letter-spacing: 2px;
+        border: 2px dashed var(--green-primary);
+    }
+    .promo-img { width: 200px; height: 160px; object-fit: cover; border-radius: var(--radius); }
+
+    /* ── TESTIMONIAL ── */
+    .testimonial-card {
+        background: white;
+        border-radius: var(--radius-lg);
+        padding: 28px;
+        box-shadow: var(--shadow);
+        height: 100%;
+    }
+    .testi-stars { color: #FFA000; font-size: 14px; margin-bottom: 14px; }
+    .testi-text { font-size: 14px; line-height: 1.8; color: var(--text-mid); font-style: italic; margin-bottom: 20px; }
+    .testi-author { display: flex; align-items: center; gap: 12px; }
+    .testi-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid var(--green-light); }
+    .testi-name { font-weight: 600; font-size: 14px; color: var(--charcoal); }
+    .testi-city { font-size: 12px; color: var(--text-light); }
+
+    /* ── NEWSLETTER ── */
+    .newsletter-section {
+        background: var(--green-dark);
+        padding: 56px 40px;
+        text-align: center;
+    }
+    .nl-title { font-family: 'Playfair Display', serif; font-size: 34px; font-weight: 700; color: white; margin-bottom: 12px; }
+    .nl-sub { color: rgba(255,255,255,0.7); font-size: 16px; margin-bottom: 32px; }
+
+    /* ── FOOTER ── */
+    .footer-wrap {
+        background: var(--charcoal);
+        color: rgba(255,255,255,0.7);
+        padding: 56px 40px 32px;
+    }
+    .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 48px; max-width: 1400px; margin: 0 auto 48px; }
+    .footer-logo { font-family: 'Playfair Display', serif; font-size: 24px; color: white; font-weight: 700; margin-bottom: 12px; }
+    .footer-desc { font-size: 13px; line-height: 1.8; margin-bottom: 20px; }
+    .footer-heading { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: white; font-weight: 700; margin-bottom: 16px; }
+    .footer-link { font-size: 13px; display: block; color: rgba(255,255,255,0.6); margin-bottom: 10px; cursor: pointer; transition: color 0.2s; }
+    .footer-link:hover { color: var(--green-light); }
+    .footer-bottom { border-top: 1px solid rgba(255,255,255,0.08); padding-top: 24px; display: flex; justify-content: space-between; align-items: center; max-width: 1400px; margin: 0 auto; font-size: 12px; }
+    .social-links { display: flex; gap: 12px; }
+    .social-btn { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; font-size: 14px; }
+    .social-btn:hover { background: var(--green-primary); }
+
+    /* ── CART ── */
+    .cart-item {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        padding: 18px 0;
+        border-bottom: 1px solid var(--border);
+    }
+    .cart-item-img { width: 80px; height: 80px; border-radius: 10px; object-fit: cover; flex-shrink: 0; }
+    .cart-item-name { font-weight: 600; font-size: 14px; color: var(--charcoal); margin-bottom: 4px; }
+    .cart-item-price { font-size: 16px; font-weight: 700; color: var(--green-dark); }
+
+    /* ── CHATBOT ── */
+    .chatbot-fab {
+        position: fixed;
+        bottom: 28px;
+        right: 28px;
+        width: 58px;
+        height: 58px;
+        background: linear-gradient(135deg, var(--green-primary), var(--green-dark));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 6px 24px rgba(46,125,50,0.45);
+        z-index: 1000;
+        font-size: 22px;
+        transition: all 0.3s;
+        border: 3px solid white;
+    }
+    .chatbot-fab:hover { transform: scale(1.08); box-shadow: 0 10px 30px rgba(46,125,50,0.55); }
+    .chatbot-panel {
+        position: fixed;
+        bottom: 100px;
+        right: 28px;
+        width: 360px;
+        max-height: 560px;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+        z-index: 1000;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+    .chatbot-header {
+        background: linear-gradient(135deg, var(--green-primary), var(--green-dark));
+        padding: 18px 20px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .chatbot-avatar { width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .chatbot-title { font-weight: 700; color: white; font-size: 15px; }
+    .chatbot-status { font-size: 11px; color: rgba(255,255,255,0.75); }
+    .chatbot-body { padding: 20px; overflow-y: auto; flex: 1; }
+    .chat-option-btn {
+        width: 100%;
+        padding: 14px 18px;
+        border-radius: 12px;
+        border: 2px solid var(--border);
+        background: white;
+        cursor: pointer;
+        text-align: left;
+        transition: all 0.25s;
+        margin-bottom: 10px;
+        font-family: 'DM Sans', sans-serif;
+    }
+    .chat-option-btn:hover { border-color: var(--green-primary); background: var(--green-pale); }
+    .chat-option-title { font-weight: 700; font-size: 14px; color: var(--charcoal); margin-bottom: 3px; }
+    .chat-option-desc { font-size: 12px; color: var(--text-light); }
+
+    /* ── PAGE HEADER ── */
+    .page-header {
+        background: linear-gradient(135deg, var(--green-pale), #E8F5E9);
+        padding: 40px 60px;
+        border-bottom: 1px solid var(--border);
+    }
+    .page-header-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 36px;
+        font-weight: 700;
+        color: var(--charcoal);
+        margin-bottom: 6px;
+    }
+    .breadcrumb { font-size: 13px; color: var(--text-light); }
+    .breadcrumb span { color: var(--green-primary); cursor: pointer; }
+
+    /* ── FILTER BAR ── */
+    .filter-bar {
+        background: white;
+        padding: 16px 40px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+    .filter-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text-light); }
+
+    /* ── PRODUCT DETAIL ── */
+    .detail-wrap { max-width: 1200px; margin: 0 auto; padding: 40px; }
+    .detail-price { font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 700; color: var(--charcoal); margin-bottom: 6px; }
+    .detail-badge-row { display: flex; gap: 10px; margin: 16px 0; }
+    .detail-info-row { display: flex; gap: 32px; margin: 20px 0; }
+    .detail-info-item { text-align: center; }
+    .detail-info-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-light); margin-bottom: 4px; }
+    .detail-info-value { font-size: 14px; font-weight: 600; color: var(--charcoal); }
+
+    /* ── CHECKOUT ── */
+    .checkout-step {
+        width: 32px; height: 32px;
+        border-radius: 50%;
+        background: var(--green-light);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 14px;
+        color: var(--green-dark);
+    }
+    .checkout-step.active { background: var(--green-primary); color: white; }
+    .checkout-step.done { background: var(--green-dark); color: white; }
+
+    /* ── SEARCH BAR ── */
+    .search-result-wrap {
+        background: white;
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        overflow: hidden;
+        box-shadow: var(--shadow);
+    }
+
+    /* Streamlit widget overrides */
+    .stButton > button {
+        border-radius: 50px !important;
+        font-family: 'DM Sans', sans-serif !important;
+        font-weight: 600 !important;
+        transition: all 0.25s !important;
+    }
+    .stTextInput > div > div > input {
+        border-radius: 50px !important;
+        border: 2px solid var(--border) !important;
+        font-family: 'DM Sans', sans-serif !important;
+        padding: 10px 20px !important;
+    }
+    .stTextInput > div > div > input:focus {
+        border-color: var(--green-primary) !important;
+        box-shadow: 0 0 0 3px rgba(46,125,50,0.12) !important;
+    }
+    .stSelectbox > div > div {
+        border-radius: 50px !important;
+        font-family: 'DM Sans', sans-serif !important;
+    }
+    div[data-testid="stMetricValue"] {
+        font-family: 'Playfair Display', serif !important;
+        color: var(--green-dark) !important;
+    }
+    .stTabs [data-baseweb="tab"] {
+        font-family: 'DM Sans', sans-serif !important;
+        font-weight: 600 !important;
+    }
+    .stTabs [aria-selected="true"] {
+        color: var(--green-primary) !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+inject_css()
+
+# ─────────────────────────────────────────────
+# NAVIGATION BAR
+# ─────────────────────────────────────────────
+def render_navbar():
+    cart_count = get_cart_count()
+
+    col_logo, col_nav, col_actions = st.columns([2, 6, 2])
+
+    with col_logo:
+        st.markdown("""
+        <div style="padding: 16px 0 16px 20px;">
+            <div class="logo-wrap">
+                <div class="logo-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                        <path d="M17 8C8 10 5.9 16.17 3.82 21H5.71C6.38 19.32 7.22 17.68 8.5 16.3C10 17.5 12 18 14 18C16.5 18 19 17 21 15C20.5 13 18.5 11.5 17 11.5C16 11.5 15 12 14 13C14.5 11 15.5 9.5 17 8Z"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="logo-text">GreenGrove</div>
+                    <div class="logo-sub">Premium Plants</div>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col_nav:
+        n1, n2, n3, n4, n5, n6, n7 = st.columns(7)
+        with n1:
+            if st.button("Home", key="nav_home", use_container_width=True):
+                nav_to("home")
+        with n2:
+            if st.button("Plants", key="nav_plants", use_container_width=True):
+                nav_to("category", selected_category="Indoor Plants")
+        with n3:
+            if st.button("Seeds", key="nav_seeds", use_container_width=True):
+                nav_to("category", selected_category="Vegetable Seeds")
+        with n4:
+            if st.button("Plant Care", key="nav_care", use_container_width=True):
+                nav_to("category", selected_category="Fertilizers")
+        with n5:
+            if st.button("Offers", key="nav_offers", use_container_width=True):
+                nav_to("offers")
+        with n6:
+            if st.button("About", key="nav_about", use_container_width=True):
+                nav_to("about")
+        with n7:
+            if st.button("Contact", key="nav_contact", use_container_width=True):
+                nav_to("contact")
+
+    with col_actions:
+        a1, a2 = st.columns(2)
+        with a1:
+            search_q = st.text_input("", placeholder="Search...", key="nav_search", label_visibility="collapsed")
+            if search_q:
+                st.session_state.search_query = search_q
+                nav_to("search")
+        with a2:
+            cart_label = f"Cart ({cart_count})" if cart_count > 0 else "Cart"
+            if st.button(cart_label, key="nav_cart", type="primary", use_container_width=True):
+                nav_to("cart")
+
+    st.markdown('<div style="height: 2px; background: linear-gradient(90deg, #2E7D32, #C8E6C9, #2E7D32);"></div>', unsafe_allow_html=True)
+
+# ─────────────────────────────────────────────
+# PRODUCT CARD
+# ─────────────────────────────────────────────
+def render_product_card(product, col_key=""):
+    badge_map = {
+        "Bestseller": "badge-bestseller", "Sale": "badge-sale", "Premium": "badge-premium",
+        "Organic": "badge-organic", "Top Rated": "badge-top-rated",
+        "Bundle Deal": "badge-bundle", "Exclusive": "badge-exclusive",
+    }
+
+    badge_html = ""
+    if product.get("badge"):
+        cls = badge_map.get(product["badge"], "badge-organic")
+        badge_html = f'<span class="badge {cls}">{product["badge"]}</span>'
+
+    care_chips = ""
+    if product.get("care_level"):
+        care_chips += f'<span class="chip">{product["care_level"]}</span>'
+    if product.get("sunlight"):
+        care_chips += f'<span class="chip">{product["sunlight"]}</span>'
+    if product.get("air_purifying"):
+        care_chips += '<span class="chip">Air Purifier</span>'
+
+    disc = discount_pct(product["price"], product["original_price"])
+    stars = "★" * int(product["rating"]) + ("" if product["rating"] == int(product["rating"]) else "")
+
+    st.markdown(f"""
+    <div class="product-card">
+        <div class="product-img-wrap">
+            <img src="{product['image']}" alt="{product['name']}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=400&h=400&fit=crop'"/>
+            {badge_html}
+        </div>
+        <div class="card-body">
+            <div class="card-category">{product['category']}</div>
+            <div class="card-name">{product['name']}</div>
+            <div class="card-rating">
+                <span class="stars">{stars}</span>
+                <span style="font-size:13px;font-weight:600;color:#333">{product['rating']}</span>
+                <span class="rating-count">({product['reviews']} reviews)</span>
+            </div>
+            <div class="care-chips">{care_chips}</div>
+            <div class="card-pricing">
+                <span class="price-current">&#8377;{product['price']}</span>
+                <span class="price-original">&#8377;{product['original_price']}</span>
+                <span class="price-discount">{disc}% off</span>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    c1, c2 = st.columns([2, 1])
+    with c1:
+        if st.button("Add to Cart", key=f"atc_{product['id']}_{col_key}", use_container_width=True, type="primary"):
+            add_to_cart(product["id"])
+            st.success(f"Added {product['name']} to cart!")
+    with c2:
+        wish_label = "♥" if product["id"] in st.session_state.wishlist else "♡"
+        if st.button(wish_label, key=f"wl_{product['id']}_{col_key}", use_container_width=True):
+            if product["id"] in st.session_state.wishlist:
+                st.session_state.wishlist.discard(product["id"])
+            else:
+                st.session_state.wishlist.add(product["id"])
+
+    if st.button(f"View Details", key=f"vd_{product['id']}_{col_key}", use_container_width=True):
+        nav_to("product", selected_product=product["id"])
+
+# ─────────────────────────────────────────────
+# HOME PAGE
+# ─────────────────────────────────────────────
+def render_home():
+    # Hero
+    st.markdown("""
+    <div class="hero-section">
+        <div style="position:absolute;inset:0;background:url('https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=1400&h=600&fit=crop') center/cover;opacity:0.15;"></div>
+        <div class="hero-content">
+            <div class="hero-badge">New Arrivals — Summer Collection</div>
+            <h1 class="hero-title">Bring Nature<br/>Into Every Corner</h1>
+            <p class="hero-sub">Curated premium plants, rare finds, and expert plant care — delivered straight to your door with a happiness guarantee.</p>
+            <div class="hero-stats">
+                <div class="hero-stat">
+                    <div class="hero-stat-num">12,000+</div>
+                    <div class="hero-stat-label">Plants Delivered</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-num">500+</div>
+                    <div class="hero-stat-label">Varieties</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-num">4.9</div>
+                    <div class="hero-stat-label">Avg. Rating</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Shop by Category buttons in hero
+    st.markdown('<div style="height:2px;"></div>', unsafe_allow_html=True)
+    hc1, hc2, hc3, hc4, hc5 = st.columns(5)
+    cat_quick = [("Indoor Plants", "Indoor"), ("Outdoor Plants", "Outdoor"),
+                 ("Succulents", "Succulents"), ("Fertilizers", "Plant Care"), ("Flowering Plants", "Flowering")]
+    for col, (cat, label) in zip([hc1, hc2, hc3, hc4, hc5], cat_quick):
+        with col:
+            if st.button(label, key=f"hero_cat_{cat}", use_container_width=True):
+                nav_to("category", selected_category=cat)
+
+    # Trust Bar
+    st.markdown("""
+    <div style="background:white;border-bottom:1px solid #E8EDE8;padding:18px 40px;">
+        <div style="max-width:1400px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:36px;height:36px;background:#E8F5E9;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;">&#128668;</div>
+                <div><div style="font-weight:700;font-size:13px;color:#1A1A1A;">Free Delivery</div><div style="font-size:11px;color:#777;">On orders above &#8377;999</div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:36px;height:36px;background:#E8F5E9;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;">&#127807;</div>
+                <div><div style="font-weight:700;font-size:13px;color:#1A1A1A;">Plant Health Guarantee</div><div style="font-size:11px;color:#777;">30-day replacement policy</div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:36px;height:36px;background:#E8F5E9;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;">&#9851;</div>
+                <div><div style="font-weight:700;font-size:13px;color:#1A1A1A;">Eco Packaging</div><div style="font-size:11px;color:#777;">100% sustainable materials</div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:36px;height:36px;background:#E8F5E9;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;">&#128222;</div>
+                <div><div style="font-weight:700;font-size:13px;color:#1A1A1A;">Expert Support</div><div style="font-size:11px;color:#777;">Plant doctors available 24/7</div></div>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Featured Categories
+    st.markdown('<div class="section-wrap">', unsafe_allow_html=True)
+    st.markdown("""
+    <div class="section-header">
+        <div>
+            <div class="section-tag">Browse by Type</div>
+            <h2 class="section-title">Shop by Category</h2>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    cat_images = [
+        ("Indoor Plants", "https://images.unsplash.com/photo-1593691509543-c55fb32e4c84?w=300&h=400&fit=crop", "35+ varieties"),
+        ("Succulents", "https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=300&h=400&fit=crop", "20+ varieties"),
+        ("Flowering Plants", "https://images.unsplash.com/photo-1490750967868-88df5691cc9c?w=300&h=400&fit=crop", "28+ varieties"),
+        ("Bonsai Plants", "https://images.unsplash.com/photo-1599598425947-5202edd56fdb?w=300&h=400&fit=crop", "12+ varieties"),
+        ("Pots & Planters", "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=300&h=400&fit=crop", "50+ designs"),
+    ]
+
+    cols = st.columns(5)
+    for col, (name, img, count) in zip(cols, cat_images):
+        with col:
+            st.markdown(f"""
+            <div class="cat-card">
+                <img src="{img}" alt="{name}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=300&h=400&fit=crop'"/>
+                <div class="cat-overlay">
+                    <div class="cat-name">{name}</div>
+                    <div class="cat-count">{count}</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            if st.button(f"Explore {name.split()[0]}", key=f"cat_btn_{name}", use_container_width=True):
+                nav_to("category", selected_category=name)
+
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # Best Sellers
+    st.markdown('<div style="background:#F8FAF8;padding:1px 0;">', unsafe_allow_html=True)
+    st.markdown('<div class="section-wrap">', unsafe_allow_html=True)
+    st.markdown("""
+    <div class="section-header">
+        <div>
+            <div class="section-tag">Most Loved</div>
+            <h2 class="section-title">Bestsellers</h2>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    bestsellers = [p for p in PRODUCTS if p.get("badge") in ["Bestseller", "Top Rated"]][:4]
+    cols = st.columns(4)
+    for col, product in zip(cols, bestsellers):
+        with col:
+            render_product_card(product, col_key="bs")
+
+    st.markdown('</div></div>', unsafe_allow_html=True)
+
+    # Promo Banner
+    st.markdown("""
+    <div style="padding: 20px 0;">
+        <div class="promo-band">
+            <div>
+                <div style="font-size:11px;font-weight:600;color:#2E7D32;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;">Limited Time Offer</div>
+                <div class="promo-title">Monsoon Gardening Sale</div>
+                <div class="promo-sub">Prepare your garden for the rains. Up to 40% off on outdoor plants, pots, soil, and gardening tools this season.</div>
+                <div class="promo-code">Use code: MONSOON40</div>
+            </div>
+            <img src="https://images.unsplash.com/photo-1587978185023-dc9c1d66fbca?w=300&h=200&fit=crop" class="promo-img" alt="Monsoon Sale" onerror="this.src='https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=300&h=200&fit=crop'"/>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # New Arrivals
+    st.markdown('<div class="section-wrap">', unsafe_allow_html=True)
+    st.markdown("""
+    <div class="section-header">
+        <div>
+            <div class="section-tag">Just Landed</div>
+            <h2 class="section-title">New Arrivals</h2>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    new_arrivals = [p for p in PRODUCTS if p.get("badge") in ["Premium", "Exclusive", "Bundle Deal"]][:4]
+    cols = st.columns(4)
+    for col, product in zip(cols, new_arrivals):
+        with col:
+            render_product_card(product, col_key="na")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # Testimonials
+    st.markdown('<div style="background:white;padding:1px 0;">', unsafe_allow_html=True)
+    st.markdown('<div class="section-wrap">', unsafe_allow_html=True)
+    st.markdown("""
+    <div class="section-header">
+        <div>
+            <div class="section-tag">Customer Stories</div>
+            <h2 class="section-title">What Our Plant Parents Say</h2>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    cols = st.columns(4)
+    for col, t in zip(cols, TESTIMONIALS):
+        with col:
+            st.markdown(f"""
+            <div class="testimonial-card">
+                <div class="testi-stars">{"★" * t['rating']}</div>
+                <div class="testi-text">"{t['text']}"</div>
+                <div class="testi-author">
+                    <img class="testi-avatar" src="{t['avatar']}" alt="{t['name']}" onerror="this.src='https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=60&h=60&fit=crop&crop=face'"/>
+                    <div>
+                        <div class="testi-name">{t['name']}</div>
+                        <div class="testi-city">{t['city']}</div>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+    st.markdown('</div></div>', unsafe_allow_html=True)
+
+    # Newsletter
+    st.markdown("""
+    <div class="newsletter-section">
+        <div class="nl-title">Join 50,000+ Plant Lovers</div>
+        <div class="nl-sub">Get weekly plant care tips, exclusive offers, and first access to new arrivals in your inbox.</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    nl_col1, nl_col2, nl_col3 = st.columns([2, 2, 1])
+    with nl_col2:
+        email = st.text_input("", placeholder="Enter your email address", key="nl_email", label_visibility="collapsed")
+        if st.button("Subscribe — It's Free", key="nl_sub", type="primary", use_container_width=True):
+            if email and "@" in email:
+                st.success("You're subscribed! Welcome to the GreenGrove family.")
+            else:
+                st.error("Please enter a valid email address.")
+
+    render_footer()
+
+# ─────────────────────────────────────────────
+# CATEGORY PAGE
+# ─────────────────────────────────────────────
+def render_category_page():
+    cat = st.session_state.selected_category or "Indoor Plants"
+
+    st.markdown(f"""
+    <div class="page-header">
+        <div class="breadcrumb"><span>Home</span> / {cat}</div>
+        <div class="page-header-title">{cat}</div>
+        <div style="color:#777;font-size:14px;">Showing {len([p for p in PRODUCTS if p['category'] == cat])} products</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Sub-nav for category group
+    sub_cats = []
+    for group, cats in CATEGORIES.items():
+        if cat in cats:
+            sub_cats = cats
+            break
+
+    if sub_cats:
+        cols = st.columns(min(len(sub_cats), 8))
+        for col, sc in zip(cols, sub_cats):
+            with col:
+                btn_type = "primary" if sc == cat else "secondary"
+                if st.button(sc.replace(" Plants", "").replace(" Seeds", ""), key=f"subcat_{sc}", use_container_width=True, type=btn_type):
+                    st.session_state.selected_category = sc
+                    st.rerun()
+
+    # Filters
+    fc1, fc2, fc3, fc4 = st.columns([3, 2, 2, 2])
+    with fc1:
+        st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
+        search_within = st.text_input("", placeholder=f"Search within {cat}...", key="cat_search", label_visibility="collapsed")
+    with fc2:
+        sort = st.selectbox("Sort by", ["Popular", "Price: Low to High", "Price: High to Low", "Highest Rated", "Newest"], key="cat_sort", label_visibility="collapsed")
+    with fc3:
+        care = st.selectbox("Care Level", ["All", "Very Easy", "Easy", "Moderate", "Expert"], key="cat_care", label_visibility="collapsed")
+    with fc4:
+        price_range = st.selectbox("Price Range", ["All", "Under ₹500", "₹500–₹1000", "Above ₹1000"], key="cat_price", label_visibility="collapsed")
+
+    # Filter products
+    filtered = [p for p in PRODUCTS if p["category"] == cat]
+
+    if search_within:
+        filtered = [p for p in filtered if search_within.lower() in p["name"].lower() or search_within.lower() in p["description"].lower()]
+
+    if care != "All":
+        filtered = [p for p in filtered if p.get("care_level") == care]
+
+    if price_range == "Under ₹500":
+        filtered = [p for p in filtered if p["price"] < 500]
+    elif price_range == "₹500–₹1000":
+        filtered = [p for p in filtered if 500 <= p["price"] <= 1000]
+    elif price_range == "Above ₹1000":
+        filtered = [p for p in filtered if p["price"] > 1000]
+
+    if sort == "Price: Low to High":
+        filtered.sort(key=lambda x: x["price"])
+    elif sort == "Price: High to Low":
+        filtered.sort(key=lambda x: -x["price"])
+    elif sort == "Highest Rated":
+        filtered.sort(key=lambda x: -x["rating"])
+
+    st.markdown(f"<div style='padding:12px 0;font-size:13px;color:#777;'>{len(filtered)} products found</div>", unsafe_allow_html=True)
+
+    if not filtered:
+        # Fall back to all products for this category group
+        filtered = PRODUCTS[:8]
+        st.info("Showing all available products. No products found in this specific category yet.")
+
+    # Display grid
+    cols = st.columns(4)
+    for i, product in enumerate(filtered):
+        with cols[i % 4]:
+            render_product_card(product, col_key=f"cat{i}")
+
+# ─────────────────────────────────────────────
+# PRODUCT DETAIL PAGE
+# ─────────────────────────────────────────────
+def render_product_detail():
+    pid = st.session_state.selected_product
+    product = next((p for p in PRODUCTS if p["id"] == pid), PRODUCTS[0])
+
+    if st.button("← Back to Shop", key="back_btn"):
+        nav_to("home")
+
+    st.markdown('<div class="detail-wrap">', unsafe_allow_html=True)
+
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        st.image(product["image"], use_container_width=True)
+        # Thumbnail row
+        th1, th2, th3, th4 = st.columns(4)
+        for tc in [th1, th2, th3, th4]:
+            with tc:
+                st.image(product["image"], use_container_width=True)
+
+    with col2:
+        disc = discount_pct(product["price"], product["original_price"])
+
+        badge_map = {
+            "Bestseller": "badge-bestseller", "Sale": "badge-sale", "Premium": "badge-premium",
+            "Organic": "badge-organic", "Top Rated": "badge-top-rated",
+        }
+
+        if product.get("badge"):
+            cls = badge_map.get(product["badge"], "badge-organic")
+            st.markdown(f'<span class="badge {cls}" style="position:static;display:inline-block;margin-bottom:10px;">{product["badge"]}</span>', unsafe_allow_html=True)
+
+        st.markdown(f"""
+        <div style="font-family:'Playfair Display',serif;font-size:30px;font-weight:700;color:#1A1A1A;margin-bottom:8px;">{product['name']}</div>
+        <div style="font-size:12px;color:#2E7D32;font-weight:600;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">{product['category']}</div>
+        """, unsafe_allow_html=True)
+
+        stars = "★" * int(product["rating"])
+        st.markdown(f"""
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+            <span style="color:#FFA000;font-size:16px;">{stars}</span>
+            <span style="font-weight:700;font-size:15px;">{product['rating']}</span>
+            <span style="color:#777;font-size:13px;">({product['reviews']} verified reviews)</span>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown(f"""
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+            <span style="font-family:'Playfair Display',serif;font-size:34px;font-weight:700;">&#8377;{product['price']}</span>
+            <span style="font-size:16px;color:#999;text-decoration:line-through;">&#8377;{product['original_price']}</span>
+            <span style="background:#FCE4EC;color:#C62828;padding:4px 10px;border-radius:50px;font-size:12px;font-weight:700;">{disc}% OFF</span>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown(f"""
+        <p style="font-size:15px;color:#555;line-height:1.8;margin-bottom:24px;">{product['description']}</p>
+        """, unsafe_allow_html=True)
+
+        # Plant info grid
+        info_items = [
+            ("Pot Size", product.get("pot_size", "—")),
+            ("Care Level", product.get("care_level", "—")),
+            ("Sunlight", product.get("sunlight", "—")),
+            ("Stock", f"{product.get('stock', '—')} left"),
+        ]
+        cols_info = st.columns(4)
+        for col, (label, value) in zip(cols_info, info_items):
+            with col:
+                st.markdown(f"""
+                <div style="background:#F1F8E9;border-radius:10px;padding:12px;text-align:center;">
+                    <div style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#777;margin-bottom:4px;">{label}</div>
+                    <div style="font-size:13px;font-weight:700;color:#1B5E20;">{value if value else '—'}</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+        st.markdown("<div style='height:16px;'></div>", unsafe_allow_html=True)
+
+        qty = st.number_input("Quantity", min_value=1, max_value=10, value=1, key="detail_qty")
+        c1, c2 = st.columns(2)
+        with c1:
+            if st.button("Add to Cart", key="detail_atc", type="primary", use_container_width=True):
+                add_to_cart(product["id"], qty)
+                st.success(f"Added {qty}x {product['name']} to cart!")
+        with c2:
+            if st.button("Buy Now", key="detail_buy", use_container_width=True):
+                add_to_cart(product["id"], qty)
+                nav_to("cart")
+
+        st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
+        st.markdown("""
+        <div style="background:#F1F8E9;border-radius:10px;padding:14px 18px;font-size:13px;color:#2E7D32;">
+            <b>Free delivery</b> on this item &bull; <b>30-day</b> plant health guarantee &bull; Expert care guide included
+        </div>
+        """, unsafe_allow_html=True)
+
+    # Tabs: Description, Care, Reviews
+    st.markdown("<div style='height:32px;'></div>", unsafe_allow_html=True)
+    tab1, tab2, tab3 = st.tabs(["Description", "Care Instructions", "Customer Reviews"])
+    with tab1:
+        st.markdown(f"""
+        <p style="font-size:15px;line-height:1.9;color:#444;">{product['description']}</p>
+        <p style="font-size:15px;line-height:1.9;color:#444;margin-top:16px;">
+        Each plant is hand-selected from our certified nurseries, thoroughly inspected for health, and carefully packaged 
+        to ensure safe transit. We include a detailed care card and a 30-day health guarantee with every order.
+        </p>
+        """, unsafe_allow_html=True)
+
+    with tab2:
+        st.markdown(f"""
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:8px;">
+            <div style="background:#F1F8E9;padding:20px;border-radius:12px;">
+                <div style="font-weight:700;color:#1B5E20;margin-bottom:8px;">Watering</div>
+                <p style="font-size:14px;color:#555;line-height:1.7;">Water when the top inch of soil is dry. {'Every 7-10 days in summer, less in winter.' if product.get('care_level') in ['Easy','Very Easy'] else 'Monitor soil moisture carefully, avoid overwatering.'}</p>
+            </div>
+            <div style="background:#F1F8E9;padding:20px;border-radius:12px;">
+                <div style="font-weight:700;color:#1B5E20;margin-bottom:8px;">Light</div>
+                <p style="font-size:14px;color:#555;line-height:1.7;">Prefers {product.get('sunlight', 'indirect')} light. Keep away from harsh afternoon sun.</p>
+            </div>
+            <div style="background:#F1F8E9;padding:20px;border-radius:12px;">
+                <div style="font-weight:700;color:#1B5E20;margin-bottom:8px;">Fertilizing</div>
+                <p style="font-size:14px;color:#555;line-height:1.7;">Apply balanced liquid fertilizer once a month during the growing season (March–September).</p>
+            </div>
+            <div style="background:#F1F8E9;padding:20px;border-radius:12px;">
+                <div style="font-weight:700;color:#1B5E20;margin-bottom:8px;">Repotting</div>
+                <p style="font-size:14px;color:#555;line-height:1.7;">Repot every 1-2 years in spring when roots outgrow the current pot. Use well-draining potting mix.</p>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with tab3:
+        for t in TESTIMONIALS[:3]:
+            st.markdown(f"""
+            <div style="padding:16px 0;border-bottom:1px solid #E8EDE8;">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                    <img src="{t['avatar']}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;" onerror="this.src='https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=60&h=60&fit=crop&crop=face'"/>
+                    <div>
+                        <div style="font-weight:700;font-size:14px;">{t['name']}</div>
+                        <div style="font-size:12px;color:#777;">{t['city']} — Verified Purchase</div>
+                    </div>
+                    <div style="margin-left:auto;color:#FFA000;">{"★" * t['rating']}</div>
+                </div>
+                <p style="font-size:14px;color:#555;line-height:1.7;font-style:italic;">"{t['text']}"</p>
+            </div>
+            """, unsafe_allow_html=True)
+
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# ─────────────────────────────────────────────
+# SEARCH PAGE
+# ─────────────────────────────────────────────
+def render_search():
+    q = st.session_state.search_query
+    results = [p for p in PRODUCTS if q.lower() in p["name"].lower() or q.lower() in p["category"].lower() or q.lower() in p["description"].lower()]
+
+    if st.button("← Back", key="search_back"):
+        nav_to("home")
+
+    st.markdown(f"""
+    <div class="page-header">
+        <div class="page-header-title">Search Results</div>
+        <div style="color:#777;font-size:14px;">{len(results)} results for "<b>{q}</b>"</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    if not results:
+        st.markdown("""
+        <div style="text-align:center;padding:80px 20px;">
+            <div style="font-size:48px;margin-bottom:16px;">&#127807;</div>
+            <h3>No plants found</h3>
+            <p style="color:#777;">Try a different search term or browse our categories.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("Browse All Plants", type="primary"):
+            nav_to("category", selected_category="Indoor Plants")
+    else:
+        cols = st.columns(4)
+        for i, product in enumerate(results):
+            with cols[i % 4]:
+                render_product_card(product, col_key=f"sr{i}")
+
+# ─────────────────────────────────────────────
+# CART PAGE
+# ─────────────────────────────────────────────
+def render_cart():
+    if st.button("← Continue Shopping", key="cart_back"):
+        nav_to("home")
+
+    st.markdown("""
+    <div class="page-header">
+        <div class="page-header-title">Shopping Cart</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    if not st.session_state.cart:
+        st.markdown("""
+        <div style="text-align:center;padding:80px 20px;">
+            <div style="font-size:64px;margin-bottom:16px;">&#128722;</div>
+            <h3 style="font-family:'Playfair Display',serif;">Your cart is empty</h3>
+            <p style="color:#777;margin-bottom:24px;">Discover our beautiful collection of plants and plant care products.</p>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("Start Shopping", type="primary", use_container_width=False):
+            nav_to("home")
+        return
+
+    col_main, col_summary = st.columns([2, 1])
+
+    with col_main:
+        st.markdown("<div style='padding:20px 0;'>", unsafe_allow_html=True)
+        for pid, item in list(st.session_state.cart.items()):
+            p = item["product"]
+            st.markdown(f"""
+            <div class="cart-item">
+                <img class="cart-item-img" src="{p['image']}" alt="{p['name']}" onerror="this.src='https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=80&h=80&fit=crop'"/>
+                <div style="flex:1;">
+                    <div class="cart-item-name">{p['name']}</div>
+                    <div style="font-size:12px;color:#777;margin-bottom:6px;">{p['category']} — {p.get('pot_size','')}</div>
+                    <div class="cart-item-price">&#8377;{p['price']:,} each</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            c1, c2, c3, c4 = st.columns([2, 1, 1, 1])
+            with c1:
+                st.markdown(f"<div style='padding-top:8px;font-weight:600;'>Subtotal: ₹{p['price'] * item['qty']:,}</div>", unsafe_allow_html=True)
+            with c2:
+                new_qty = st.number_input("Qty", min_value=1, max_value=20, value=item["qty"], key=f"qty_{pid}", label_visibility="collapsed")
+                st.session_state.cart[pid]["qty"] = new_qty
+            with c4:
+                if st.button("Remove", key=f"remove_{pid}"):
+                    del st.session_state.cart[pid]
+                    st.rerun()
+
+    with col_summary:
+        subtotal = get_cart_total()
+        shipping = 0 if subtotal >= 999 else 99
+        discount = int(subtotal * 0.1) if subtotal >= 1500 else 0
+        total = subtotal + shipping - discount
+
+        st.markdown(f"""
+        <div style="background:white;border-radius:16px;padding:28px;box-shadow:0 4px 20px rgba(0,0,0,0.08);position:sticky;top:80px;">
+            <h3 style="font-family:'Playfair Display',serif;margin-bottom:20px;">Order Summary</h3>
+            <div style="display:flex;justify-content:space-between;margin-bottom:12px;font-size:14px;">
+                <span style="color:#777;">Subtotal ({get_cart_count()} items)</span>
+                <span>&#8377;{subtotal:,}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:12px;font-size:14px;">
+                <span style="color:#777;">Shipping</span>
+                <span style="color:#2E7D32;">{"FREE" if shipping == 0 else f"&#8377;{shipping}"}</span>
+            </div>
+            {'<div style="display:flex;justify-content:space-between;margin-bottom:12px;font-size:14px;"><span style="color:#777;">Discount (10%)</span><span style="color:#C62828;">-&#8377;' + str(discount) + '</span></div>' if discount > 0 else ''}
+            <div style="border-top:1px solid #E8EDE8;margin:16px 0;"></div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:20px;">
+                <span style="font-weight:700;font-size:16px;">Total</span>
+                <span style="font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:#1B5E20;">&#8377;{total:,}</span>
+            </div>
+            {'<div style="background:#E8F5E9;border-radius:8px;padding:10px 14px;font-size:12px;color:#2E7D32;margin-bottom:16px;"><b>You save ₹' + str(discount) + '</b> on this order!</div>' if discount > 0 else ''}
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Coupon
+        coupon = st.text_input("Coupon Code", placeholder="MONSOON40", key="coupon")
+        if st.button("Apply Coupon", key="apply_coupon", use_container_width=True):
+            if coupon.upper() in ["MONSOON40", "GREEN10", "FIRSTORDER"]:
+                st.success("Coupon applied! 10% additional discount.")
+            else:
+                st.error("Invalid coupon code.")
+
+        st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
+        if st.button("Proceed to Checkout", key="checkout_btn", type="primary", use_container_width=True):
+            nav_to("checkout")
+
+# ─────────────────────────────────────────────
+# CHECKOUT PAGE
+# ─────────────────────────────────────────────
+def render_checkout():
+    if st.session_state.order_placed:
+        subtotal = get_cart_total()
+        order_id = f"GG{random.randint(100000, 999999)}"
+        st.markdown(f"""
+        <div style="text-align:center;padding:80px 20px;max-width:600px;margin:0 auto;">
+            <div style="width:80px;height:80px;background:#E8F5E9;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 24px;">&#10003;</div>
+            <h2 style="font-family:'Playfair Display',serif;margin-bottom:12px;">Order Confirmed!</h2>
+            <p style="color:#777;font-size:16px;line-height:1.7;margin-bottom:8px;">
+                Your order <b style="color:#2E7D32;">#{order_id}</b> has been placed successfully.
+            </p>
+            <p style="color:#777;font-size:14px;margin-bottom:32px;">
+                Estimated delivery: <b>2-4 business days</b>. A confirmation has been sent to your email.
+            </p>
+            <div style="background:#F1F8E9;border-radius:12px;padding:20px;margin-bottom:24px;text-align:left;">
+                <div style="font-weight:700;margin-bottom:8px;">Order Total: &#8377;{subtotal:,}</div>
+                <div style="font-size:13px;color:#777;">Payment: Cash on Delivery / UPI</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("Continue Shopping", type="primary"):
+            st.session_state.cart = {}
+            st.session_state.order_placed = False
+            nav_to("home")
+        return
+
+    step = st.session_state.checkout_step
+
+    st.markdown(f"""
+    <div class="page-header">
+        <div class="page-header-title">Checkout</div>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:16px;">
+            <span class="checkout-step {'active' if step==0 else 'done'}">1</span>
+            <span style="font-size:13px;color:#777;">Delivery Info</span>
+            <div style="width:40px;height:1px;background:#ddd;"></div>
+            <span class="checkout-step {'active' if step==1 else ('done' if step>1 else '')}">2</span>
+            <span style="font-size:13px;color:#777;">Payment</span>
+            <div style="width:40px;height:1px;background:#ddd;"></div>
+            <span class="checkout-step {'active' if step==2 else ''}">3</span>
+            <span style="font-size:13px;color:#777;">Review</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    col_form, col_summary = st.columns([3, 2])
+
+    with col_form:
+        if step == 0:
+            st.markdown("<div style='padding:20px 0;'>", unsafe_allow_html=True)
+            st.markdown("### Delivery Information")
+            c1, c2 = st.columns(2)
+            with c1:
+                st.text_input("First Name", key="fname", placeholder="Rahul")
+            with c2:
+                st.text_input("Last Name", key="lname", placeholder="Sharma")
+            st.text_input("Email Address", key="email_co", placeholder="rahul@example.com")
+            st.text_input("Phone Number", key="phone", placeholder="+91 98765 43210")
+            st.text_area("Delivery Address", key="address", placeholder="House No., Street, Area, City, State - PIN Code", height=100)
+            c3, c4 = st.columns(2)
+            with c3:
+                st.selectbox("City", ["Mumbai", "Delhi", "Bangalore", "Hyderabad", "Chennai", "Pune", "Ahmedabad", "Other"], key="city")
+            with c4:
+                st.text_input("PIN Code", key="pin", placeholder="400001")
+
+            if st.button("Continue to Payment", type="primary", use_container_width=True):
+                if st.session_state.get("fname") and st.session_state.get("address"):
+                    st.session_state.checkout_step = 1
+                    st.rerun()
+                else:
+                    st.error("Please fill in all required fields.")
+
+        elif step == 1:
+            st.markdown("### Payment Method")
+            payment = st.radio("Select Payment Method", ["UPI / Google Pay / PhonePe", "Credit / Debit Card", "Net Banking", "Cash on Delivery"], key="payment_method")
+
+            if payment == "UPI / Google Pay / PhonePe":
+                st.text_input("UPI ID", placeholder="yourname@upi")
+            elif payment == "Credit / Debit Card":
+                st.text_input("Card Number", placeholder="1234 5678 9012 3456")
+                c1, c2 = st.columns(2)
+                with c1:
+                    st.text_input("Expiry (MM/YY)", placeholder="12/27")
+                with c2:
+                    st.text_input("CVV", placeholder="123", type="password")
+            elif payment == "Net Banking":
+                st.selectbox("Select Bank", ["HDFC Bank", "SBI", "ICICI Bank", "Axis Bank", "Kotak Bank"])
+
+            c1, c2 = st.columns(2)
+            with c1:
+                if st.button("← Back", key="pay_back"):
+                    st.session_state.checkout_step = 0
+                    st.rerun()
+            with c2:
+                if st.button("Review Order", type="primary", use_container_width=True):
+                    st.session_state.checkout_step = 2
+                    st.rerun()
+
+        elif step == 2:
+            st.markdown("### Review Your Order")
+            for pid, item in st.session_state.cart.items():
+                p = item["product"]
+                st.markdown(f"""
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #E8EDE8;">
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <img src="{p['image']}" style="width:50px;height:50px;border-radius:8px;object-fit:cover;" onerror="this.src='https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=50&h=50&fit=crop'"/>
+                        <div>
+                            <div style="font-weight:600;font-size:14px;">{p['name']}</div>
+                            <div style="font-size:12px;color:#777;">Qty: {item['qty']}</div>
+                        </div>
+                    </div>
+                    <div style="font-weight:700;">&#8377;{p['price'] * item['qty']:,}</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            st.markdown(f"""
+            <div style="margin-top:16px;padding:16px;background:#F1F8E9;border-radius:10px;">
+                <div style="display:flex;justify-content:space-between;font-weight:700;font-size:16px;">
+                    <span>Total Amount</span>
+                    <span style="color:#1B5E20;">&#8377;{get_cart_total():,}</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            c1, c2 = st.columns(2)
+            with c1:
+                if st.button("← Edit Order", key="review_back"):
+                    st.session_state.checkout_step = 1
+                    st.rerun()
+            with c2:
+                if st.button("Place Order", type="primary", use_container_width=True):
+                    st.session_state.order_placed = True
+                    st.rerun()
+
+    with col_summary:
+        subtotal = get_cart_total()
+        st.markdown(f"""
+        <div style="background:white;border-radius:16px;padding:24px;box-shadow:0 4px 20px rgba(0,0,0,0.08);position:sticky;top:80px;margin-top:20px;">
+            <h4 style="font-family:'Playfair Display',serif;margin-bottom:16px;">Order Summary</h4>
+            {''.join([f'<div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:13px;"><span style="color:#777;">{item["product"]["name"]} x{item["qty"]}</span><span>&#8377;{item["product"]["price"] * item["qty"]:,}</span></div>' for item in st.session_state.cart.values()])}
+            <div style="border-top:1px solid #E8EDE8;margin:12px 0;"></div>
+            <div style="display:flex;justify-content:space-between;font-weight:700;">
+                <span>Total</span>
+                <span style="color:#1B5E20;font-family:'Playfair Display',serif;font-size:20px;">&#8377;{subtotal:,}</span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+# ─────────────────────────────────────────────
+# ABOUT PAGE
+# ─────────────────────────────────────────────
+def render_about():
+    st.markdown("""
+    <div class="page-header">
+        <div class="page-header-title">About GreenGrove</div>
+        <div style="color:#777;font-size:15px;">India's most trusted premium plant destination</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown('<div class="section-wrap">', unsafe_allow_html=True)
+
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        st.image("https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=600&h=400&fit=crop", use_container_width=True)
+    with col2:
+        st.markdown("""
+        <h2 style="font-family:'Playfair Display',serif;font-size:34px;margin-bottom:16px;">Our Green Story</h2>
+        <p style="font-size:15px;line-height:1.9;color:#555;margin-bottom:16px;">
+        GreenGrove was founded in 2018 with a simple belief: that every home and workplace deserves the beauty and wellness benefits of nature. 
+        What started as a small nursery in Pune has grown into India's most trusted online plant destination.
+        </p>
+        <p style="font-size:15px;line-height:1.9;color:#555;margin-bottom:24px;">
+        We partner directly with certified nurseries across India to bring you the healthiest, most vibrant plants — 
+        curated by expert botanists, packed sustainably, and delivered with a 30-day happiness guarantee.
+        </p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div style="background:#F1F8E9;padding:20px;border-radius:12px;text-align:center;">
+                <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:#1B5E20;">12,000+</div>
+                <div style="font-size:13px;color:#777;margin-top:4px;">Happy Customers</div>
+            </div>
+            <div style="background:#F1F8E9;padding:20px;border-radius:12px;text-align:center;">
+                <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:#1B5E20;">500+</div>
+                <div style="font-size:13px;color:#777;margin-top:4px;">Plant Varieties</div>
+            </div>
+            <div style="background:#F1F8E9;padding:20px;border-radius:12px;text-align:center;">
+                <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:#1B5E20;">50+</div>
+                <div style="font-size:13px;color:#777;margin-top:4px;">Cities Served</div>
+            </div>
+            <div style="background:#F1F8E9;padding:20px;border-radius:12px;text-align:center;">
+                <div style="font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:#1B5E20;">4.9/5</div>
+                <div style="font-size:13px;color:#777;margin-top:4px;">Average Rating</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("---")
+    st.markdown("""
+    <h3 style="font-family:'Playfair Display',serif;margin-bottom:24px;">Our Values</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;">
+        <div style="background:white;border-radius:16px;padding:28px;box-shadow:0 4px 20px rgba(0,0,0,0.06);text-align:center;">
+            <div style="font-size:36px;margin-bottom:12px;">&#127807;</div>
+            <div style="font-weight:700;font-size:16px;margin-bottom:8px;">Plant Health First</div>
+            <p style="font-size:13px;color:#777;line-height:1.7;">Every plant is inspected and certified healthy before dispatch. We guarantee or replace.</p>
+        </div>
+        <div style="background:white;border-radius:16px;padding:28px;box-shadow:0 4px 20px rgba(0,0,0,0.06);text-align:center;">
+            <div style="font-size:36px;margin-bottom:12px;">&#9851;</div>
+            <div style="font-weight:700;font-size:16px;margin-bottom:8px;">Sustainability</div>
+            <p style="font-size:13px;color:#777;line-height:1.7;">100% plastic-free packaging, carbon-neutral deliveries, and support for local nurseries.</p>
+        </div>
+        <div style="background:white;border-radius:16px;padding:28px;box-shadow:0 4px 20px rgba(0,0,0,0.06);text-align:center;">
+            <div style="font-size:36px;margin-bottom:12px;">&#128218;</div>
+            <div style="font-weight:700;font-size:16px;margin-bottom:8px;">Expert Guidance</div>
+            <p style="font-size:13px;color:#777;line-height:1.7;">Botanist-curated care guides and our AI plant doctor ensure your plants thrive.</p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown('</div>', unsafe_allow_html=True)
+    render_footer()
+
+# ─────────────────────────────────────────────
+# CONTACT PAGE
+# ─────────────────────────────────────────────
+def render_contact():
+    st.markdown("""
+    <div class="page-header">
+        <div class="page-header-title">Contact Us</div>
+        <div style="color:#777;">We're here to help with any plant-related query.</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown('<div class="section-wrap">', unsafe_allow_html=True)
+    col1, col2 = st.columns([1, 1])
+
+    with col1:
+        st.markdown("""
+        <h3 style="font-family:'Playfair Display',serif;margin-bottom:24px;">Get in Touch</h3>
+        <div style="margin-bottom:24px;">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+                <div style="width:44px;height:44px;background:#E8F5E9;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">&#128222;</div>
+                <div>
+                    <div style="font-weight:700;font-size:14px;">Phone</div>
+                    <div style="color:#777;font-size:13px;">+91 98765 43210 (9 AM – 6 PM, Mon–Sat)</div>
+                </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+                <div style="width:44px;height:44px;background:#E8F5E9;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">&#128140;</div>
+                <div>
+                    <div style="font-weight:700;font-size:14px;">Email</div>
+                    <div style="color:#777;font-size:13px;">care@greengrove.in</div>
+                </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:44px;height:44px;background:#E8F5E9;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">&#128205;</div>
+                <div>
+                    <div style="font-weight:700;font-size:14px;">Address</div>
+                    <div style="color:#777;font-size:13px;">GreenGrove HQ, Baner, Pune, Maharashtra – 411045</div>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("""
+        <div style="background:#F1F8E9;border-radius:12px;padding:20px;margin-top:8px;">
+            <div style="font-weight:700;margin-bottom:8px;">Business Hours</div>
+            <div style="font-size:13px;color:#555;line-height:2;">
+                Monday – Friday: 9:00 AM – 7:00 PM<br/>
+                Saturday: 9:00 AM – 5:00 PM<br/>
+                Sunday: 10:00 AM – 3:00 PM
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col2:
+        st.markdown("<h3 style='font-family:Playfair Display,serif;margin-bottom:24px;'>Send a Message</h3>", unsafe_allow_html=True)
+        name = st.text_input("Your Name", placeholder="Rahul Sharma", key="contact_name")
+        email = st.text_input("Email Address", placeholder="rahul@example.com", key="contact_email")
+        subject = st.selectbox("Subject", ["Plant Care Query", "Order Issue", "Return/Replacement", "Bulk Order", "Partnership", "Other"], key="contact_subject")
+        message = st.text_area("Your Message", placeholder="Tell us how we can help...", height=120, key="contact_message")
+        if st.button("Send Message", type="primary", use_container_width=True, key="contact_send"):
+            if name and email and message:
+                st.success("Your message has been sent! We'll respond within 24 hours.")
+            else:
+                st.error("Please fill in all fields.")
+
+    st.markdown('</div>', unsafe_allow_html=True)
+    render_footer()
+
+# ─────────────────────────────────────────────
+# OFFERS PAGE
+# ─────────────────────────────────────────────
+def render_offers():
+    st.markdown("""
+    <div class="page-header">
+        <div class="page-header-title">Offers & Deals</div>
+        <div style="color:#777;">Exclusive discounts for our plant community</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown('<div class="section-wrap">', unsafe_allow_html=True)
+
+    offers = [
+        {"title": "Monsoon Special", "desc": "40% off on all outdoor plants & gardening tools", "code": "MONSOON40", "color": "#E8F5E9", "accent": "#2E7D32", "img": "https://images.unsplash.com/photo-1587978185023-dc9c1d66fbca?w=300&h=180&fit=crop"},
+        {"title": "First Order Gift", "desc": "Extra 15% off on your first purchase + free care guide", "code": "FIRSTORDER", "color": "#FCE4EC", "accent": "#C62828", "img": "https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=300&h=180&fit=crop"},
+        {"title": "Bundle & Save", "desc": "Buy 3 plants, get the smallest one free", "code": "BUNDLE3", "color": "#EDE7F6", "accent": "#4527A0", "img": "https://images.unsplash.com/photo-1593691509543-c55fb32e4c84?w=300&h=180&fit=crop"},
+        {"title": "Refer a Friend", "desc": "Give ₹200 off, get ₹200 credit for every referral", "code": "REFER200", "color": "#FFF3E0", "accent": "#E65100", "img": "https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=300&h=180&fit=crop"},
+    ]
+
+    cols = st.columns(2)
+    for i, offer in enumerate(offers):
+        with cols[i % 2]:
+            st.markdown(f"""
+            <div style="background:{offer['color']};border-radius:16px;padding:28px;margin-bottom:20px;display:flex;gap:20px;align-items:center;">
+                <img src="{offer['img']}" style="width:120px;height:90px;border-radius:10px;object-fit:cover;flex-shrink:0;" onerror="this.src='https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=120&h=90&fit=crop'"/>
+                <div>
+                    <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:{offer['accent']};margin-bottom:6px;">{offer['title']}</div>
+                    <div style="font-size:13px;color:#555;margin-bottom:12px;">{offer['desc']}</div>
+                    <div style="background:white;display:inline-block;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:700;color:{offer['accent']};letter-spacing:2px;border:2px dashed {offer['accent']};">{offer['code']}</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+    st.markdown("---")
+    st.markdown("<h3 style='font-family:Playfair Display,serif;margin-bottom:20px;'>Sale Items</h3>", unsafe_allow_html=True)
+    sale_items = [p for p in PRODUCTS if p.get("badge") in ["Sale", "Bestseller"]]
+    cols = st.columns(4)
+    for i, p in enumerate(sale_items[:8]):
+        with cols[i % 4]:
+            render_product_card(p, col_key=f"offer{i}")
+
+    st.markdown('</div>', unsafe_allow_html=True)
+    render_footer()
+
+# ─────────────────────────────────────────────
+# FOOTER
+# ─────────────────────────────────────────────
+def render_footer():
+    st.markdown("""
+    <div class="footer-wrap">
+        <div class="footer-grid">
+            <div>
+                <div class="footer-logo">GreenGrove</div>
+                <div class="footer-desc">India's premium plant destination. We bring nature indoors, one plant at a time. Certified nurseries, expert care, and happiness guaranteed.</div>
+                <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(255,255,255,0.5);">
+                    <span>&#10003;</span><span>30-Day Plant Guarantee</span>
+                    <span style="margin-left:12px;">&#10003;</span><span>Free Delivery Above &#8377;999</span>
+                </div>
+            </div>
+            <div>
+                <div class="footer-heading">Quick Links</div>
+                <a class="footer-link">About Us</a>
+                <a class="footer-link">Our Nurseries</a>
+                <a class="footer-link">Plant Blog</a>
+                <a class="footer-link">Careers</a>
+                <a class="footer-link">Press</a>
+            </div>
+            <div>
+                <div class="footer-heading">Help & Policy</div>
+                <a class="footer-link">Shipping Policy</a>
+                <a class="footer-link">Return Policy</a>
+                <a class="footer-link">FAQs</a>
+                <a class="footer-link">Track Your Order</a>
+                <a class="footer-link">Privacy Policy</a>
+                <a class="footer-link">Terms of Service</a>
+            </div>
+            <div>
+                <div class="footer-heading">Contact</div>
+                <a class="footer-link">care@greengrove.in</a>
+                <a class="footer-link">+91 98765 43210</a>
+                <a class="footer-link">Baner, Pune – 411045</a>
+                <div style="margin-top:16px;" class="footer-heading">Follow Us</div>
+                <div style="display:flex;gap:8px;margin-top:8px;">
+                    <div class="social-btn">f</div>
+                    <div class="social-btn">in</div>
+                    <div class="social-btn">tw</div>
+                    <div class="social-btn">yt</div>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <div>© 2025 GreenGrove. All rights reserved. Made with love for plant parents across India.</div>
+            <div style="display:flex;gap:16px;align-items:center;">
+                <span>Visa</span><span>Mastercard</span><span>UPI</span><span>PhonePe</span>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# ─────────────────────────────────────────────
+# CHATBOT (LeafLife Care)
+# ─────────────────────────────────────────────
+def render_chatbot():
+    # FAB Button
+    col_filler, col_fab = st.columns([20, 1])
+    with col_fab:
+        if st.button("AI", key="chatbot_fab", help="LeafLife Care — Plant AI Assistant", use_container_width=True, type="primary"):
+            st.session_state.chatbot_open = not st.session_state.chatbot_open
+            if not st.session_state.chatbot_open:
+                st.session_state.chatbot_mode = None
+
+    if not st.session_state.chatbot_open:
+        return
+
+    st.markdown("---")
+    st.markdown("""
+    <div style="max-width:420px;margin:0 auto;background:white;border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,0.15);overflow:hidden;">
+        <div style="background:linear-gradient(135deg,#2E7D32,#1B5E20);padding:18px 20px;display:flex;align-items:center;gap:12px;">
+            <div style="width:44px;height:44px;background:rgba(255,255,255,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;">&#127807;</div>
+            <div>
+                <div style="font-weight:700;color:white;font-size:16px;">LeafLife Care</div>
+                <div style="font-size:11px;color:rgba(255,255,255,0.75);">AI Plant Health & Recommendation Expert</div>
+            </div>
+            <div style="margin-left:auto;width:10px;height:10px;background:#69F0AE;border-radius:50%;"></div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    if st.session_state.chatbot_mode is None:
+        st.markdown("""
+        <div style="max-width:420px;margin:0 auto;padding:20px;background:white;border-radius:0 0 20px 20px;">
+            <p style="font-size:14px;color:#555;line-height:1.7;margin-bottom:16px;">
+                Hello! I'm your personal plant expert. How can I help you today?
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        col_o1, col_o2 = st.columns(2)
+        with col_o1:
+            if st.button("Plant Diagnosis Doctor", key="cb_diag", use_container_width=True, type="primary"):
+                st.session_state.chatbot_mode = "diagnosis"
+                st.rerun()
+        with col_o2:
+            if st.button("Plant Suggestions Expert", key="cb_sugg", use_container_width=True):
+                st.session_state.chatbot_mode = "suggestions"
+                st.rerun()
+
+    elif st.session_state.chatbot_mode == "diagnosis":
+        st.markdown("""
+        <div style="max-width:420px;margin:0 auto;padding:20px;background:white;border-radius:0 0 20px 20px;">
+            <h4 style="font-family:'Playfair Display',serif;margin-bottom:8px;">Plant Diagnosis Doctor</h4>
+            <p style="font-size:13px;color:#777;margin-bottom:16px;">Upload a photo of your plant and I'll diagnose any issues and recommend remedies.</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        uploaded = st.file_uploader("Upload plant photo", type=["jpg", "jpeg", "png"], key="diag_upload", label_visibility="collapsed")
+
+        symptoms = st.multiselect(
+            "Also describe symptoms (select all that apply):",
+            ["Yellowing leaves", "Brown tips", "Wilting", "Spots on leaves", "Root rot signs",
+             "Pale/faded color", "Drooping", "Sticky residue", "White powder on leaves", "No new growth"],
+            key="symptoms"
+        )
+
+        if st.button("Diagnose My Plant", key="run_diag", type="primary", use_container_width=True):
+            if uploaded or symptoms:
+                # AI-style diagnosis based on symptoms
+                diag_map = {
+                    "Yellowing leaves": ("Nitrogen Deficiency / Overwatering", "Your plant shows signs of either nitrogen deficiency or overwatering. The yellowing pattern suggests nutrient uptake is being affected.", ["Organic Neem Cake Fertilizer", "Liquid Seaweed Growth Booster"]),
+                    "Brown tips": ("Low Humidity / Underwatering", "Brown leaf tips indicate low ambient humidity or inconsistent watering. This is common in air-conditioned spaces.", ["Terracotta Pot Set (3 Sizes)", "Organic Neem Cake Fertilizer"]),
+                    "Wilting": ("Underwatering / Root Issues", "Wilting despite moist soil suggests root rot. If soil is dry, the plant is severely underwatered.", ["Organic Neem Cake Fertilizer", "Liquid Seaweed Growth Booster"]),
+                    "Spots on leaves": ("Fungal Infection / Pest Damage", "Irregular spots suggest fungal disease or pest activity. Check undersides of leaves for insects.", ["Organic Neem Cake Fertilizer"]),
+                    "White powder on leaves": ("Powdery Mildew", "Classic powdery mildew fungal infection. Improve air circulation and reduce humidity around the plant.", ["Organic Neem Cake Fertilizer"]),
+                    "Sticky residue": ("Scale Insects / Aphid Infestation", "Sticky honeydew secreted by sap-sucking pests. Aphids or scale insects are likely present.", ["Organic Neem Cake Fertilizer"]),
+                }
+
+                primary_symptom = symptoms[0] if symptoms else "Yellowing leaves"
+                diagnosis, explanation, product_names = diag_map.get(primary_symptom, diag_map["Yellowing leaves"])
+
+                st.session_state.diagnosis_result = {
+                    "diagnosis": diagnosis,
+                    "explanation": explanation,
+                    "products": product_names,
+                    "severity": "Moderate" if len(symptoms) <= 2 else "High",
+                }
+                st.rerun()
+
+        if st.session_state.diagnosis_result:
+            r = st.session_state.diagnosis_result
+            severity_color = "#E65100" if r["severity"] == "High" else "#F57F17"
+
+            st.markdown(f"""
+            <div style="background:#FFF8E1;border-radius:12px;padding:16px;margin-bottom:16px;border-left:4px solid {severity_color};">
+                <div style="font-weight:700;color:{severity_color};margin-bottom:6px;">Diagnosis: {r['diagnosis']}</div>
+                <div style="font-size:13px;color:#555;line-height:1.7;">{r['explanation']}</div>
+                <div style="margin-top:8px;font-size:12px;color:#777;">Severity: <b style="color:{severity_color};">{r['severity']}</b></div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            st.markdown("**Recommended Remedies:**")
+            rec_products = [p for p in PRODUCTS if p["name"] in r["products"]]
+            for p in rec_products:
+                c1, c2 = st.columns([3, 2])
+                with c1:
+                    st.markdown(f"""
+                    <div style="display:flex;gap:10px;align-items:center;padding:8px 0;">
+                        <img src="{p['image']}" style="width:50px;height:50px;border-radius:8px;object-fit:cover;" onerror="this.src='https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=50&h=50&fit=crop'"/>
+                        <div>
+                            <div style="font-size:13px;font-weight:600;">{p['name']}</div>
+                            <div style="font-size:12px;color:#2E7D32;font-weight:700;">&#8377;{p['price']}</div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                with c2:
+                    if st.button("Add to Cart", key=f"diag_atc_{p['id']}", use_container_width=True, type="primary"):
+                        add_to_cart(p["id"])
+                        st.success("Added!")
+
+        if st.button("← Back to Menu", key="diag_back"):
+            st.session_state.chatbot_mode = None
+            st.session_state.diagnosis_result = None
+            st.rerun()
+
+    elif st.session_state.chatbot_mode == "suggestions":
+        st.markdown("""
+        <div style="padding-bottom:8px;">
+            <h4 style="font-family:'Playfair Display',serif;margin-bottom:4px;">Plant Suggestions Expert</h4>
+            <p style="font-size:13px;color:#777;">Answer a few questions and I'll find your perfect plants.</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        location = st.radio("Where will you keep the plant?", ["Indoor", "Outdoor", "Both"], key="sugg_loc", horizontal=True)
+        sunlight = st.radio("Sunlight available?", ["Low / Shade", "Indirect Bright", "Full Sun"], key="sugg_sun", horizontal=True)
+        maintenance = st.radio("Maintenance preference?", ["Very Low", "Occasional", "Regular"], key="sugg_maint", horizontal=True)
+        purpose = st.multiselect("What's the purpose?", ["Air Purification", "Decor", "Gifting", "Flowering", "Beginner Friendly"], key="sugg_purpose")
+
+        if st.button("Find My Perfect Plants", key="run_sugg", type="primary", use_container_width=True):
+            # Filter logic
+            candidates = list(PRODUCTS)
+
+            if location == "Indoor":
+                candidates = [p for p in candidates if p["category"] in ["Indoor Plants", "Air Purifying Plants", "Succulents", "Flowering Plants"]]
+            elif location == "Outdoor":
+                candidates = [p for p in candidates if p["category"] in ["Outdoor Plants", "Flowering Plants"]]
+
+            if sunlight == "Low / Shade":
+                candidates = [p for p in candidates if p.get("sunlight") in ["Low Light", "Low to Bright", "Indirect", None]]
+            elif sunlight == "Full Sun":
+                candidates = [p for p in candidates if p.get("sunlight") in ["Full Sun", None]]
+
+            if maintenance == "Very Low":
+                candidates = [p for p in candidates if p.get("care_level") in ["Very Easy", None]]
+            elif maintenance == "Occasional":
+                candidates = [p for p in candidates if p.get("care_level") in ["Very Easy", "Easy", None]]
+
+            if "Air Purification" in purpose:
+                candidates = [p for p in candidates if p.get("air_purifying")]
+
+            if not candidates:
+                candidates = PRODUCTS[:4]
+
+            st.markdown(f"<div style='padding:8px 0;font-size:13px;color:#2E7D32;font-weight:600;'>Found {len(candidates[:4])} perfect plants for you!</div>", unsafe_allow_html=True)
+
+            for p in candidates[:4]:
+                c1, c2 = st.columns([3, 2])
+                with c1:
+                    st.markdown(f"""
+                    <div style="display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #F0F0F0;">
+                        <img src="{p['image']}" style="width:55px;height:55px;border-radius:8px;object-fit:cover;" onerror="this.src='https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=55&h=55&fit=crop'"/>
+                        <div>
+                            <div style="font-size:13px;font-weight:600;color:#1A1A1A;">{p['name']}</div>
+                            <div style="font-size:11px;color:#777;">Care: {p.get('care_level','—')}</div>
+                            <div style="font-size:13px;color:#2E7D32;font-weight:700;">&#8377;{p['price']}</div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                with c2:
+                    if st.button("Add", key=f"sugg_atc_{p['id']}", use_container_width=True, type="primary"):
+                        add_to_cart(p["id"])
+                        st.success("Added!")
+
+        if st.button("← Back to Menu", key="sugg_back"):
+            st.session_state.chatbot_mode = None
+            st.rerun()
+
+# ─────────────────────────────────────────────
+# MAIN ROUTER
+# ─────────────────────────────────────────────
+def main():
+    render_navbar()
+
+    page = st.session_state.page
+
+    if page == "home":
+        render_home()
+    elif page == "category":
+        render_category_page()
+    elif page == "product":
+        render_product_detail()
+    elif page == "search":
+        render_search()
+    elif page == "cart":
+        render_cart()
+    elif page == "checkout":
+        render_checkout()
+    elif page == "about":
+        render_about()
+    elif page == "contact":
+        render_contact()
+    elif page == "offers":
+        render_offers()
+    else:
+        render_home()
+
+    # Chatbot (renders at bottom of every page)
+    st.markdown("<div style='height:40px;'></div>", unsafe_allow_html=True)
+    st.markdown("---")
+    st.markdown("""
+    <div style="text-align:center;padding:8px;background:#F1F8E9;border-radius:8px;margin-bottom:8px;">
+        <b style="color:#2E7D32;">LeafLife Care</b> — AI Plant Assistant
+        <span style="color:#777;font-size:12px;margin-left:8px;">Click below to open the plant expert chatbot</span>
+    </div>
+    """, unsafe_allow_html=True)
+    render_chatbot()
+
+main()
